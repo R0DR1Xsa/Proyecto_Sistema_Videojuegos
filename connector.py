@@ -9,7 +9,7 @@ def conectar():
         conexion = mysql.connector.connect(
             host="localhost",
             user="root",
-            password="140105",            # <-- coloca aqui tu contraseña de MySQL
+            password="140105",
             database="torneo_videojuegos"
         )
         return conexion
