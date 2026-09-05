@@ -117,7 +117,7 @@ def menu_principal():
             partido.tabla_posiciones()
             pausar()
         elif opcion == "5":
-            estilos.exito("\nSaliendo del sistema... ¡Hasta la proxima!")
+            estilos.exito("\nGracias por usar Nuestro Sistema ¡Hasta la proxima!")
             break
         else:
             estilos.aviso("Opcion invalida.")
