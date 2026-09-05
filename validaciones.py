@@ -1,4 +1,5 @@
 import re
+from datetime import date
 
 # Funciones reutilizables para validar los datos que ingresa
 # el usuario por teclado.
@@ -67,6 +68,15 @@ def validar_fecha(mensaje):
         if len(partes) == 3 and all(p.isdigit() for p in partes):
             anio, mes, dia = partes
             if len(anio) == 4 and 1 <= int(mes) <= 12 and 1 <= int(dia) <= 31:
+                try:
+                    fecha_ingresada = date(int(anio), int(mes), int(dia))
+                except ValueError:
+                    print("Esa fecha no existe en el calendario. Intenta de nuevo (o escribe 'volver').")
+                    continue
+                if fecha_ingresada < date.today():
+                    # <-- no se permiten partidos con fecha anterior a hoy
+                    print("La fecha no puede ser anterior a hoy. Intenta de nuevo (o escribe 'volver').")
+                    continue
                 return dato
         print("Formato de fecha invalido. Usa el formato AAAA-MM-DD (ej: 2026-09-10), o escribe 'volver'.")
 
