@@ -1,3 +1,4 @@
+import mysql.connector
 import tabulate
 
 import connector, estilos, validaciones
@@ -18,12 +19,12 @@ def registrar_equipo():
         estilos.error(f"\n[ERROR] Ya existe un equipo con el codigo '{codigo}'. El codigo debe ser unico.")
         return
 
-    nombre = validaciones.validar_texto("Nombre del equipo: ")
+    nombre = validaciones.validar_texto("Nombre del equipo: ", longitud_maxima=50)
     if nombre is None:
         estilos.aviso("Operacion cancelada.")
         return
 
-    pais = validaciones.validar_texto("Pais de procedencia: ")
+    pais = validaciones.validar_texto("Pais de procedencia: ", longitud_maxima=50, solo_letras=True)
     if pais is None:
         estilos.aviso("Operacion cancelada.")
         return
@@ -31,16 +32,20 @@ def registrar_equipo():
     conexion = connector.conectar()
     if conexion is None:
         return
+    cursor = None
     try:
         cursor = conexion.cursor()
         consulta = "INSERT INTO equipo (codigo_equipo, nombre_equipo, pais_procedencia) VALUES (%s, %s, %s)"
         cursor.execute(consulta, (codigo, nombre, pais))
         conexion.commit()
         estilos.exito(f"\nEquipo '{nombre}' registrado correctamente.")
-    except Exception as error:
+    except mysql.connector.Error as error:
         estilos.error(f"\n[ERROR] No se pudo registrar el equipo: {error}")
+    except Exception as error:
+        estilos.error(f"\n[ERROR] Ocurrio un error inesperado al registrar el equipo: {error}")
     finally:
-        cursor.close()
+        if cursor is not None:
+            cursor.close()
         conexion.close()
 
 
@@ -49,6 +54,7 @@ def listar_equipos():
     conexion = connector.conectar()
     if conexion is None:
         return
+    cursor = None
     try:
         cursor = conexion.cursor()
         cursor.execute("SELECT codigo_equipo, nombre_equipo, pais_procedencia FROM equipo ORDER BY codigo_equipo")
@@ -59,10 +65,13 @@ def listar_equipos():
         encabezados = ["Codigo", "Nombre", "Pais"]
         tabla = tabulate.tabulate(equipos, headers=encabezados, tablefmt="fancy_grid")
         estilos.imprimir_tabla(tabla, estilos.COLOR_EQUIPO)
-    except Exception as error:
+    except mysql.connector.Error as error:
         estilos.error(f"\n[ERROR] No se pudo listar los equipos: {error}")
+    except Exception as error:
+        estilos.error(f"\n[ERROR] Ocurrio un error inesperado al listar los equipos: {error}")
     finally:
-        cursor.close()
+        if cursor is not None:
+            cursor.close()
         conexion.close()
 
 
@@ -80,6 +89,7 @@ def actualizar_equipo():
     conexion = connector.conectar()
     if conexion is None:
         return
+    cursor = None
     try:
         cursor = conexion.cursor()
         cursor.execute("SELECT * FROM equipo WHERE codigo_equipo = %s", (codigo,))
@@ -88,12 +98,12 @@ def actualizar_equipo():
             estilos.aviso("No existe ningun equipo con ese codigo.")
             return
 
-        nuevo_nombre = validaciones.validar_texto("Nuevo nombre del equipo: ")
+        nuevo_nombre = validaciones.validar_texto("Nuevo nombre del equipo: ", longitud_maxima=50)
         if nuevo_nombre is None:
             estilos.aviso("Operacion cancelada.")
             return
 
-        nuevo_pais = validaciones.validar_texto("Nuevo pais de procedencia: ")
+        nuevo_pais = validaciones.validar_texto("Nuevo pais de procedencia: ", longitud_maxima=50, solo_letras=True)
         if nuevo_pais is None:
             estilos.aviso("Operacion cancelada.")
             return
@@ -102,10 +112,13 @@ def actualizar_equipo():
         cursor.execute(consulta, (nuevo_nombre, nuevo_pais, codigo))
         conexion.commit()
         estilos.exito("\nEquipo actualizado correctamente.")
-    except Exception as error:
+    except mysql.connector.Error as error:
         estilos.error(f"\n[ERROR] No se pudo actualizar el equipo: {error}")
+    except Exception as error:
+        estilos.error(f"\n[ERROR] Ocurrio un error inesperado al actualizar el equipo: {error}")
     finally:
-        cursor.close()
+        if cursor is not None:
+            cursor.close()
         conexion.close()
 
 
@@ -128,6 +141,7 @@ def eliminar_equipo():
     conexion = connector.conectar()
     if conexion is None:
         return
+    cursor = None
     try:
         cursor = conexion.cursor()
         cursor.execute("DELETE FROM equipo WHERE codigo_equipo = %s", (codigo,))
@@ -136,11 +150,14 @@ def eliminar_equipo():
             estilos.aviso("No existe ningun equipo con ese codigo.")
         else:
             estilos.exito("\nEquipo eliminado correctamente.")
-    except Exception as error:
+    except mysql.connector.Error as error:
         # <-- se dispara si el equipo tiene jugadores o partidos asociados (llave foranea)
         estilos.error(f"\n[ERROR] No se pudo eliminar el equipo (puede tener jugadores o partidos asociados): {error}")
+    except Exception as error:
+        estilos.error(f"\n[ERROR] Ocurrio un error inesperado al eliminar el equipo: {error}")
     finally:
-        cursor.close()
+        if cursor is not None:
+            cursor.close()
         conexion.close()
 
 
@@ -149,10 +166,15 @@ def existe_equipo(codigo):
     conexion = connector.conectar()
     if conexion is None:
         return False
+    cursor = None
     try:
         cursor = conexion.cursor()
         cursor.execute("SELECT codigo_equipo FROM equipo WHERE codigo_equipo = %s", (codigo,))
         return cursor.fetchone() is not None
+    except mysql.connector.Error as error:
+        estilos.error(f"\n[ERROR] No se pudo verificar el equipo: {error}")
+        return False
     finally:
-        cursor.close()
+        if cursor is not None:
+            cursor.close()
         conexion.close()

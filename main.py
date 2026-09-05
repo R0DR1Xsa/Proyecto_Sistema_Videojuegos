@@ -125,4 +125,9 @@ def menu_principal():
 
 
 if __name__ == "__main__":
-    menu_principal()
+    try:
+        menu_principal()
+    except KeyboardInterrupt:
+        estilos.aviso("\n\nSaliste con Ctrl+C. ¡Hasta la proxima!")
+    except EOFError:
+        estilos.aviso("\n\nEntrada finalizada. ¡Hasta la proxima!")
