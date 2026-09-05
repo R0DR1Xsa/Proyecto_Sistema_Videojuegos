@@ -1,109 +1,110 @@
 import os
-from equipo import registrar_equipo, listar_equipos, actualizar_equipo, eliminar_equipo
-from jugador import registrar_jugador, listar_jugadores, actualizar_jugador, eliminar_jugador
-from partido import registrar_partido, listar_partidos, actualizar_partido, eliminar_partido, tabla_posiciones
 
-# main.py
+import colorama
+import equipo, estilos, jugador, partido
+
 # Menu principal del sistema de torneo de videojuegos
+
 
 def limpiar_pantalla():
     os.system("cls" if os.name == "nt" else "clear")
 
 
-def encabezado(titulo):
-    limpiar_pantalla()
-    print("╔" + "═" * 50 + "╗")
-    print("║" + titulo.center(50) + "║")
-    print("╚" + "═" * 50 + "╝")
+def pausar():
+    os.system("pause") if os.name == "nt" else input("\nPresiona ENTER para continuar...")
 
 
 def menu_equipos():
     while True:
-        encabezado("GESTION DE EQUIPOS")
-        print("1. Registrar equipo")
-        print("2. Listar equipos")
-        print("3. Actualizar equipo")
-        print("4. Eliminar equipo")
-        print("5. Volver al menu principal")
-        print("-" * 52)
+        limpiar_pantalla()
+        estilos.encabezado("GESTION DE EQUIPOS", [
+            ("1. Registrar equipo", estilos.COLOR_EQUIPO),
+            ("2. Listar equipos", estilos.COLOR_EQUIPO),
+            ("3. Actualizar equipo", estilos.COLOR_EQUIPO),
+            ("4. Eliminar equipo", estilos.COLOR_EQUIPO),
+            ("5. Volver al menu principal", estilos.COLOR_MENU),
+        ], estilos.COLOR_EQUIPO)
         opcion = input("Selecciona una opcion: ").strip()
 
         if opcion == "1":
-            registrar_equipo()
+            equipo.registrar_equipo()
         elif opcion == "2":
-            listar_equipos()
+            equipo.listar_equipos()
         elif opcion == "3":
-            actualizar_equipo()
+            equipo.actualizar_equipo()
         elif opcion == "4":
-            eliminar_equipo()
+            equipo.eliminar_equipo()
         elif opcion == "5":
             break
         else:
-            print("Opcion invalida.")
-        os.system("pause") if os.name == "nt" else input("\nPresiona ENTER para continuar...")
+            estilos.aviso("Opcion invalida.")
+        pausar()
 
 
 def menu_jugadores():
     while True:
-        encabezado("GESTION DE JUGADORES")
-        print("1. Registrar jugador")
-        print("2. Listar jugadores")
-        print("3. Actualizar jugador")
-        print("4. Eliminar jugador")
-        print("5. Volver al menu principal")
-        print("-" * 52)
+        limpiar_pantalla()
+        estilos.encabezado("GESTION DE JUGADORES", [
+            ("1. Registrar jugador", estilos.COLOR_JUGADOR),
+            ("2. Listar jugadores", estilos.COLOR_JUGADOR),
+            ("3. Actualizar jugador", estilos.COLOR_JUGADOR),
+            ("4. Eliminar jugador", estilos.COLOR_JUGADOR),
+            ("5. Volver al menu principal", estilos.COLOR_MENU),
+        ], estilos.COLOR_JUGADOR)
         opcion = input("Selecciona una opcion: ").strip()
 
         if opcion == "1":
-            registrar_jugador()
+            jugador.registrar_jugador()
         elif opcion == "2":
-            listar_jugadores()
+            jugador.listar_jugadores()
         elif opcion == "3":
-            actualizar_jugador()
+            jugador.actualizar_jugador()
         elif opcion == "4":
-            eliminar_jugador()
+            jugador.eliminar_jugador()
         elif opcion == "5":
             break
         else:
-            print("Opcion invalida.")
-        os.system("pause") if os.name == "nt" else input("\nPresiona ENTER para continuar...")
+            estilos.aviso("Opcion invalida.")
+        pausar()
 
 
 def menu_partidos():
     while True:
-        encabezado("GESTION DE PARTIDOS")
-        print("1. Registrar partido")
-        print("2. Listar partidos")
-        print("3. Actualizar partido")
-        print("4. Eliminar partido")
-        print("5. Volver al menu principal")
-        print("-" * 52)
+        limpiar_pantalla()
+        estilos.encabezado("GESTION DE PARTIDOS", [
+            ("1. Registrar partido", estilos.COLOR_PARTIDO),
+            ("2. Listar partidos", estilos.COLOR_PARTIDO),
+            ("3. Actualizar partido", estilos.COLOR_PARTIDO),
+            ("4. Eliminar partido", estilos.COLOR_PARTIDO),
+            ("5. Volver al menu principal", estilos.COLOR_MENU),
+        ], estilos.COLOR_PARTIDO)
         opcion = input("Selecciona una opcion: ").strip()
 
         if opcion == "1":
-            registrar_partido()
+            partido.registrar_partido()
         elif opcion == "2":
-            listar_partidos()
+            partido.listar_partidos()
         elif opcion == "3":
-            actualizar_partido()
+            partido.actualizar_partido()
         elif opcion == "4":
-            eliminar_partido()
+            partido.eliminar_partido()
         elif opcion == "5":
             break
         else:
-            print("Opcion invalida.")
-        os.system("pause") if os.name == "nt" else input("\nPresiona ENTER para continuar...")
+            estilos.aviso("Opcion invalida.")
+        pausar()
 
 
 def menu_principal():
     while True:
-        encabezado("TORNEO DE VIDEOJUEGOS")
-        print("1. Gestionar equipos")
-        print("2. Gestionar jugadores")
-        print("3. Gestionar partidos")
-        print("4. Tabla de posiciones (Bonus)")
-        print("5. Salir")
-        print("-" * 52)
+        limpiar_pantalla()
+        estilos.encabezado("TORNEO DE VIDEOJUEGOS", [
+            ("1. Gestionar equipos", estilos.COLOR_EQUIPO),
+            ("2. Gestionar jugadores", estilos.COLOR_JUGADOR),
+            ("3. Gestionar partidos", estilos.COLOR_PARTIDO),
+            ("4. Tabla de posiciones (Bonus)", estilos.COLOR_POSICIONES),
+            ("5. Salir", estilos.COLOR_ERROR),
+        ], estilos.COLOR_MENU)
         opcion = input("Selecciona una opcion: ").strip()
 
         if opcion == "1":
@@ -113,14 +114,14 @@ def menu_principal():
         elif opcion == "3":
             menu_partidos()
         elif opcion == "4":
-            tabla_posiciones()
-            os.system("pause") if os.name == "nt" else input("\nPresiona ENTER para continuar...")
+            partido.tabla_posiciones()
+            pausar()
         elif opcion == "5":
-            print("\nSaliendo del sistema... ¡Hasta la proxima!")
+            estilos.exito("\nSaliendo del sistema... ¡Hasta la proxima!")
             break
         else:
-            print("Opcion invalida.")
-            os.system("pause") if os.name == "nt" else input("\nPresiona ENTER para continuar...")
+            estilos.aviso("Opcion invalida.")
+            pausar()
 
 
 if __name__ == "__main__":

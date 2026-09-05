@@ -1,60 +1,94 @@
-from tabulate import tabulate
-from connector import conectar
-from validaciones import validar_texto, validar_entero, validar_fecha, validar_hora, confirmar_accion
-from equipo import existe_equipo
+import tabulate
 
-# partido.py
+import connector, equipo, estilos, validaciones
+
 # Operaciones CRUD para la tabla partido
 # + Bonus: tabla de posiciones (partidos jugados, ganados, perdidos)
 
+
 def registrar_partido():
-    print("\n--- REGISTRAR NUEVO PARTIDO ---")
-    codigo_local = validar_texto("Codigo del equipo local: ").upper()
-    codigo_visitante = validar_texto("Codigo del equipo visitante: ").upper()
+    estilos.titulo("REGISTRAR NUEVO PARTIDO", estilos.COLOR_PARTIDO)
+    equipo.listar_equipos()
+    estilos.aviso("\nEscribe 'volver' en cualquier campo para cancelar y regresar al menu.\n")
+
+    codigo_local = validaciones.validar_texto("Codigo del equipo local (ver tabla arriba): ")
+    if codigo_local is None:
+        estilos.aviso("Operacion cancelada.")
+        return
+    codigo_local = codigo_local.upper()
+
+    codigo_visitante = validaciones.validar_texto("Codigo del equipo visitante (ver tabla arriba): ")
+    if codigo_visitante is None:
+        estilos.aviso("Operacion cancelada.")
+        return
+    codigo_visitante = codigo_visitante.upper()
 
     if codigo_local == codigo_visitante:
-        print("\n[ERROR] Un equipo no puede jugar contra si mismo.")
+        estilos.error("\n[ERROR] Un equipo no puede jugar contra si mismo.")
         return
 
-    if not existe_equipo(codigo_local):
-        print(f"\n[ERROR] No existe ningun equipo con el codigo '{codigo_local}'.")
+    if not equipo.existe_equipo(codigo_local):
+        estilos.error(f"\n[ERROR] No existe ningun equipo con el codigo '{codigo_local}'.")
         return
-    if not existe_equipo(codigo_visitante):
-        print(f"\n[ERROR] No existe ningun equipo con el codigo '{codigo_visitante}'.")
+    if not equipo.existe_equipo(codigo_visitante):
+        estilos.error(f"\n[ERROR] No existe ningun equipo con el codigo '{codigo_visitante}'.")
         return
 
-    fecha = validar_fecha("Fecha del partido (AAAA-MM-DD): ")
-    hora = validar_hora("Hora del partido (HH:MM): ")
-    marcador_local = validar_entero("Marcador del equipo local: ", minimo=0)
-    marcador_visitante = validar_entero("Marcador del equipo visitante: ", minimo=0)
-    arbitro = validar_texto("Nombre del arbitro: ")
-    sede = validar_texto("Nombre/ciudad de la sede: ")
+    fecha = validaciones.validar_fecha("Fecha del partido (AAAA-MM-DD): ")
+    if fecha is None:
+        estilos.aviso("Operacion cancelada.")
+        return
 
-    conexion = conectar()
+    hora = validaciones.validar_hora("Hora del partido (HH:MM): ")
+    if hora is None:
+        estilos.aviso("Operacion cancelada.")
+        return
+
+    marcador_local = validaciones.validar_entero("Marcador del equipo local: ", minimo=0)
+    if marcador_local is None:
+        estilos.aviso("Operacion cancelada.")
+        return
+
+    marcador_visitante = validaciones.validar_entero("Marcador del equipo visitante: ", minimo=0)
+    if marcador_visitante is None:
+        estilos.aviso("Operacion cancelada.")
+        return
+
+    arbitro = validaciones.validar_texto("Nombre del arbitro: ")
+    if arbitro is None:
+        estilos.aviso("Operacion cancelada.")
+        return
+
+    sede = validaciones.validar_texto("Nombre/ciudad de la sede: ")
+    if sede is None:
+        estilos.aviso("Operacion cancelada.")
+        return
+
+    conexion = connector.conectar()
     if conexion is None:
         return
     try:
         cursor = conexion.cursor()
         consulta = """
             INSERT INTO partido
-            (codigo_equipo_local, codigo_equipo_visitante, fecha, hora,
+            (fk_codigo_equipo_local, fk_codigo_equipo_visitante, fecha, hora,
              marcador_local, marcador_visitante, arbitro, sede)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
         """
         cursor.execute(consulta, (codigo_local, codigo_visitante, fecha, hora,
                                    marcador_local, marcador_visitante, arbitro, sede))
         conexion.commit()
-        print("\nPartido registrado correctamente.")
+        estilos.exito("\nPartido registrado correctamente.")
     except Exception as error:
-        print(f"\n[ERROR] No se pudo registrar el partido: {error}")
+        estilos.error(f"\n[ERROR] No se pudo registrar el partido: {error}")
     finally:
         cursor.close()
         conexion.close()
 
 
 def listar_partidos():
-    print("\n--- LISTADO DE PARTIDOS ---")
-    conexion = conectar()
+    estilos.titulo("LISTADO DE PARTIDOS", estilos.COLOR_PARTIDO)
+    conexion = connector.conectar()
     if conexion is None:
         return
     try:
@@ -63,43 +97,65 @@ def listar_partidos():
             SELECT p.id_partido, el.nombre_equipo AS local, ev.nombre_equipo AS visitante,
                    p.marcador_local, p.marcador_visitante, p.fecha, p.hora, p.arbitro, p.sede
             FROM partido p
-            INNER JOIN equipo el ON p.codigo_equipo_local = el.codigo_equipo
-            INNER JOIN equipo ev ON p.codigo_equipo_visitante = ev.codigo_equipo
+            INNER JOIN equipo el ON p.fk_codigo_equipo_local = el.codigo_equipo
+            INNER JOIN equipo ev ON p.fk_codigo_equipo_visitante = ev.codigo_equipo
             ORDER BY p.fecha, p.hora
         """
         cursor.execute(consulta)
         partidos = cursor.fetchall()
         if not partidos:
-            print("No hay partidos registrados.")
+            estilos.aviso("No hay partidos registrados.")
             return
         encabezados = ["ID", "Local", "Visitante", "Marc. Local", "Marc. Visit.", "Fecha", "Hora", "Arbitro", "Sede"]
-        print(tabulate(partidos, headers=encabezados, tablefmt="grid"))
+        tabla = tabulate.tabulate(partidos, headers=encabezados, tablefmt="fancy_grid")
+        estilos.imprimir_tabla(tabla, estilos.COLOR_PARTIDO)
     except Exception as error:
-        print(f"\n[ERROR] No se pudo listar los partidos: {error}")
+        estilos.error(f"\n[ERROR] No se pudo listar los partidos: {error}")
     finally:
         cursor.close()
         conexion.close()
 
 
 def actualizar_partido():
-    print("\n--- ACTUALIZAR PARTIDO ---")
-    id_partido = validar_entero("ID del partido a actualizar: ", minimo=1)
+    estilos.titulo("ACTUALIZAR PARTIDO", estilos.COLOR_PARTIDO)
+    listar_partidos()
+    estilos.aviso("\nEscribe el ID del partido que quieres actualizar (o 'volver' para cancelar).\n")
 
-    conexion = conectar()
+    id_partido = validaciones.validar_entero("ID del partido a actualizar: ", minimo=1)
+    if id_partido is None:
+        estilos.aviso("Operacion cancelada.")
+        return
+
+    conexion = connector.conectar()
     if conexion is None:
         return
     try:
         cursor = conexion.cursor()
         cursor.execute("SELECT * FROM partido WHERE id_partido = %s", (id_partido,))
-        partido = cursor.fetchone()
-        if partido is None:
-            print("No existe ningun partido con ese ID.")
+        partido_encontrado = cursor.fetchone()
+        if partido_encontrado is None:
+            estilos.aviso("No existe ningun partido con ese ID.")
             return
 
-        marcador_local = validar_entero("Nuevo marcador del equipo local: ", minimo=0)
-        marcador_visitante = validar_entero("Nuevo marcador del equipo visitante: ", minimo=0)
-        arbitro = validar_texto("Nuevo nombre del arbitro: ")
-        sede = validar_texto("Nueva sede: ")
+        marcador_local = validaciones.validar_entero("Nuevo marcador del equipo local: ", minimo=0)
+        if marcador_local is None:
+            estilos.aviso("Operacion cancelada.")
+            return
+
+        marcador_visitante = validaciones.validar_entero("Nuevo marcador del equipo visitante: ", minimo=0)
+        if marcador_visitante is None:
+            estilos.aviso("Operacion cancelada.")
+            return
+
+        arbitro = validaciones.validar_texto("Nuevo nombre del arbitro: ")
+        if arbitro is None:
+            estilos.aviso("Operacion cancelada.")
+            return
+
+        sede = validaciones.validar_texto("Nueva sede: ")
+        if sede is None:
+            estilos.aviso("Operacion cancelada.")
+            return
 
         consulta = """
             UPDATE partido
@@ -108,23 +164,30 @@ def actualizar_partido():
         """
         cursor.execute(consulta, (marcador_local, marcador_visitante, arbitro, sede, id_partido))
         conexion.commit()
-        print("\nPartido actualizado correctamente.")
+        estilos.exito("\nPartido actualizado correctamente.")
     except Exception as error:
-        print(f"\n[ERROR] No se pudo actualizar el partido: {error}")
+        estilos.error(f"\n[ERROR] No se pudo actualizar el partido: {error}")
     finally:
         cursor.close()
         conexion.close()
 
 
 def eliminar_partido():
-    print("\n--- ELIMINAR PARTIDO ---")
-    id_partido = validar_entero("ID del partido a eliminar: ", minimo=1)
+    estilos.titulo("ELIMINAR PARTIDO", estilos.COLOR_PARTIDO)
+    listar_partidos()
+    estilos.aviso("\nEscribe el ID del partido que quieres eliminar (o 'volver' para cancelar).\n")
 
-    if not confirmar_accion(f"¿Seguro que deseas eliminar el partido #{id_partido}?"):
-        print("Operacion cancelada.")
+    id_partido = validaciones.validar_entero("ID del partido a eliminar: ", minimo=1)
+    if id_partido is None:
+        estilos.aviso("Operacion cancelada.")
         return
 
-    conexion = conectar()
+    confirmacion = validaciones.confirmar_accion(f"¿Seguro que deseas eliminar el partido #{id_partido}?")
+    if not confirmacion:
+        estilos.aviso("Operacion cancelada.")
+        return
+
+    conexion = connector.conectar()
     if conexion is None:
         return
     try:
@@ -132,11 +195,11 @@ def eliminar_partido():
         cursor.execute("DELETE FROM partido WHERE id_partido = %s", (id_partido,))
         conexion.commit()
         if cursor.rowcount == 0:
-            print("No existe ningun partido con ese ID.")
+            estilos.aviso("No existe ningun partido con ese ID.")
         else:
-            print("\nPartido eliminado correctamente.")
+            estilos.exito("\nPartido eliminado correctamente.")
     except Exception as error:
-        print(f"\n[ERROR] No se pudo eliminar el partido: {error}")
+        estilos.error(f"\n[ERROR] No se pudo eliminar el partido: {error}")
     finally:
         cursor.close()
         conexion.close()
@@ -144,8 +207,8 @@ def eliminar_partido():
 
 def tabla_posiciones():
     # <-- RETO OPCIONAL (BONUS): partidos jugados, ganados y perdidos por equipo
-    print("\n--- TABLA DE POSICIONES (BONUS) ---")
-    conexion = conectar()
+    estilos.titulo("TABLA DE POSICIONES (BONUS)", estilos.COLOR_POSICIONES)
+    conexion = connector.conectar()
     if conexion is None:
         return
     try:
@@ -153,15 +216,15 @@ def tabla_posiciones():
         cursor.execute("SELECT codigo_equipo, nombre_equipo FROM equipo ORDER BY nombre_equipo")
         equipos = cursor.fetchall()
         if not equipos:
-            print("No hay equipos registrados.")
+            estilos.aviso("No hay equipos registrados.")
             return
 
         tabla = []
         for codigo_equipo, nombre_equipo in equipos:
             cursor.execute("""
-                SELECT marcador_local, marcador_visitante, codigo_equipo_local
+                SELECT marcador_local, marcador_visitante, fk_codigo_equipo_local
                 FROM partido
-                WHERE codigo_equipo_local = %s OR codigo_equipo_visitante = %s
+                WHERE fk_codigo_equipo_local = %s OR fk_codigo_equipo_visitante = %s
             """, (codigo_equipo, codigo_equipo))
             partidos = cursor.fetchall()
 
@@ -186,9 +249,10 @@ def tabla_posiciones():
         tabla.sort(key=lambda fila: fila[2], reverse=True)
 
         encabezados = ["Equipo", "PJ", "PG", "PP"]
-        print(tabulate(tabla, headers=encabezados, tablefmt="grid"))
+        tabla_texto = tabulate.tabulate(tabla, headers=encabezados, tablefmt="fancy_grid")
+        estilos.imprimir_tabla(tabla_texto, estilos.COLOR_POSICIONES)
     except Exception as error:
-        print(f"\n[ERROR] No se pudo calcular la tabla de posiciones: {error}")
+        estilos.error(f"\n[ERROR] No se pudo calcular la tabla de posiciones: {error}")
     finally:
         cursor.close()
         conexion.close()

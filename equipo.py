@@ -1,17 +1,34 @@
-from tabulate import tabulate
-from connector import conectar
-from validaciones import validar_texto, confirmar_accion
+import tabulate
 
-# equipo.py
+import connector, estilos, validaciones
+
 # Operaciones CRUD para la tabla equipo
 
-def registrar_equipo():
-    print("\n--- REGISTRAR NUEVO EQUIPO ---")
-    codigo = validar_texto("Codigo del equipo (unico): ").upper()
-    nombre = validar_texto("Nombre del equipo: ")
-    pais = validar_texto("Pais de procedencia: ")
 
-    conexion = conectar()
+def registrar_equipo():
+    estilos.titulo("REGISTRAR NUEVO EQUIPO", estilos.COLOR_EQUIPO)
+    estilos.aviso("Escribe 'volver' en cualquier campo para cancelar y regresar al menu.\n")
+
+    codigo = validaciones.validar_codigo_equipo("Codigo del equipo, formato EQ01 (unico): ")
+    if codigo is None:
+        estilos.aviso("Operacion cancelada.")
+        return
+
+    if existe_equipo(codigo):
+        estilos.error(f"\n[ERROR] Ya existe un equipo con el codigo '{codigo}'. El codigo debe ser unico.")
+        return
+
+    nombre = validaciones.validar_texto("Nombre del equipo: ")
+    if nombre is None:
+        estilos.aviso("Operacion cancelada.")
+        return
+
+    pais = validaciones.validar_texto("Pais de procedencia: ")
+    if pais is None:
+        estilos.aviso("Operacion cancelada.")
+        return
+
+    conexion = connector.conectar()
     if conexion is None:
         return
     try:
@@ -19,17 +36,17 @@ def registrar_equipo():
         consulta = "INSERT INTO equipo (codigo_equipo, nombre_equipo, pais_procedencia) VALUES (%s, %s, %s)"
         cursor.execute(consulta, (codigo, nombre, pais))
         conexion.commit()
-        print(f"\nEquipo '{nombre}' registrado correctamente.")
+        estilos.exito(f"\nEquipo '{nombre}' registrado correctamente.")
     except Exception as error:
-        print(f"\n[ERROR] No se pudo registrar el equipo: {error}")
+        estilos.error(f"\n[ERROR] No se pudo registrar el equipo: {error}")
     finally:
         cursor.close()
         conexion.close()
 
 
 def listar_equipos():
-    print("\n--- LISTADO DE EQUIPOS ---")
-    conexion = conectar()
+    estilos.titulo("LISTADO DE EQUIPOS", estilos.COLOR_EQUIPO)
+    conexion = connector.conectar()
     if conexion is None:
         return
     try:
@@ -37,55 +54,78 @@ def listar_equipos():
         cursor.execute("SELECT codigo_equipo, nombre_equipo, pais_procedencia FROM equipo ORDER BY codigo_equipo")
         equipos = cursor.fetchall()
         if not equipos:
-            print("No hay equipos registrados.")
+            estilos.aviso("No hay equipos registrados.")
             return
         encabezados = ["Codigo", "Nombre", "Pais"]
-        print(tabulate(equipos, headers=encabezados, tablefmt="grid"))
+        tabla = tabulate.tabulate(equipos, headers=encabezados, tablefmt="fancy_grid")
+        estilos.imprimir_tabla(tabla, estilos.COLOR_EQUIPO)
     except Exception as error:
-        print(f"\n[ERROR] No se pudo listar los equipos: {error}")
+        estilos.error(f"\n[ERROR] No se pudo listar los equipos: {error}")
     finally:
         cursor.close()
         conexion.close()
 
 
 def actualizar_equipo():
-    print("\n--- ACTUALIZAR EQUIPO ---")
-    codigo = validar_texto("Codigo del equipo a actualizar: ").upper()
+    estilos.titulo("ACTUALIZAR EQUIPO", estilos.COLOR_EQUIPO)
+    listar_equipos()
+    estilos.aviso("\nEscribe el codigo del equipo que quieres actualizar (o 'volver' para cancelar).\n")
 
-    conexion = conectar()
+    codigo = validaciones.validar_texto("Codigo del equipo a actualizar: ")
+    if codigo is None:
+        estilos.aviso("Operacion cancelada.")
+        return
+    codigo = codigo.upper()
+
+    conexion = connector.conectar()
     if conexion is None:
         return
     try:
         cursor = conexion.cursor()
         cursor.execute("SELECT * FROM equipo WHERE codigo_equipo = %s", (codigo,))
-        equipo = cursor.fetchone()
-        if equipo is None:
-            print("No existe ningun equipo con ese codigo.")
+        equipo_encontrado = cursor.fetchone()
+        if equipo_encontrado is None:
+            estilos.aviso("No existe ningun equipo con ese codigo.")
             return
 
-        nuevo_nombre = validar_texto("Nuevo nombre del equipo: ")
-        nuevo_pais = validar_texto("Nuevo pais de procedencia: ")
+        nuevo_nombre = validaciones.validar_texto("Nuevo nombre del equipo: ")
+        if nuevo_nombre is None:
+            estilos.aviso("Operacion cancelada.")
+            return
+
+        nuevo_pais = validaciones.validar_texto("Nuevo pais de procedencia: ")
+        if nuevo_pais is None:
+            estilos.aviso("Operacion cancelada.")
+            return
 
         consulta = "UPDATE equipo SET nombre_equipo = %s, pais_procedencia = %s WHERE codigo_equipo = %s"
         cursor.execute(consulta, (nuevo_nombre, nuevo_pais, codigo))
         conexion.commit()
-        print("\nEquipo actualizado correctamente.")
+        estilos.exito("\nEquipo actualizado correctamente.")
     except Exception as error:
-        print(f"\n[ERROR] No se pudo actualizar el equipo: {error}")
+        estilos.error(f"\n[ERROR] No se pudo actualizar el equipo: {error}")
     finally:
         cursor.close()
         conexion.close()
 
 
 def eliminar_equipo():
-    print("\n--- ELIMINAR EQUIPO ---")
-    codigo = validar_texto("Codigo del equipo a eliminar: ").upper()
+    estilos.titulo("ELIMINAR EQUIPO", estilos.COLOR_EQUIPO)
+    listar_equipos()
+    estilos.aviso("\nEscribe el codigo del equipo que quieres eliminar (o 'volver' para cancelar).\n")
 
-    if not confirmar_accion(f"¿Seguro que deseas eliminar el equipo '{codigo}'?"):
-        print("Operacion cancelada.")
+    codigo = validaciones.validar_texto("Codigo del equipo a eliminar: ")
+    if codigo is None:
+        estilos.aviso("Operacion cancelada.")
+        return
+    codigo = codigo.upper()
+
+    confirmacion = validaciones.confirmar_accion(f"¿Seguro que deseas eliminar el equipo '{codigo}'?")
+    if not confirmacion:
+        estilos.aviso("Operacion cancelada.")
         return
 
-    conexion = conectar()
+    conexion = connector.conectar()
     if conexion is None:
         return
     try:
@@ -93,12 +133,12 @@ def eliminar_equipo():
         cursor.execute("DELETE FROM equipo WHERE codigo_equipo = %s", (codigo,))
         conexion.commit()
         if cursor.rowcount == 0:
-            print("No existe ningun equipo con ese codigo.")
+            estilos.aviso("No existe ningun equipo con ese codigo.")
         else:
-            print("\nEquipo eliminado correctamente.")
+            estilos.exito("\nEquipo eliminado correctamente.")
     except Exception as error:
         # <-- se dispara si el equipo tiene jugadores o partidos asociados (llave foranea)
-        print(f"\n[ERROR] No se pudo eliminar el equipo (puede tener jugadores o partidos asociados): {error}")
+        estilos.error(f"\n[ERROR] No se pudo eliminar el equipo (puede tener jugadores o partidos asociados): {error}")
     finally:
         cursor.close()
         conexion.close()
@@ -106,7 +146,7 @@ def eliminar_equipo():
 
 def existe_equipo(codigo):
     # <-- funcion de apoyo usada por jugador.py y partido.py para validar antes de insertar
-    conexion = conectar()
+    conexion = connector.conectar()
     if conexion is None:
         return False
     try:
